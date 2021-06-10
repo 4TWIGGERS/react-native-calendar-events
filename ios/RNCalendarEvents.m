@@ -118,6 +118,7 @@ RCT_EXPORT_MODULE()
     NSDictionary *recurrenceRule = [RCTConvert NSDictionary:details[_recurrenceRule]];
     NSString *availability = [RCTConvert NSString:details[_availability]];
     NSString *timeZone = [RCTConvert NSString:details[_timeZone]];
+    NSArray *attendees = [RCTConvert NSArray:details[_attendees]];
 
     if (eventId) {
         Boolean futureEvents = [RCTConvert BOOL:options[@"futureEvents"]];
@@ -231,7 +232,29 @@ RCT_EXPORT_MODULE()
         calendarEvent.structuredLocation.radius = [[locationOptions valueForKey:@"radius"] doubleValue];
     }
     
+    if (attendees) {
+        [calendarEvent setValue:[self createCalendarEventAttendees:attendees] forKey:_attendees];
+    }
+    
     return [self saveEvent:calendarEvent options:options];
+}
+
+- (NSArray *)createCalendarEventAttendees:(NSArray *)attendees
+{
+    NSMutableArray *calendarEventAttendees = [[NSMutableArray alloc] init];
+
+    for (NSDictionary *attendeeDict in attendees) {
+        Class className = NSClassFromString(@"EKAttendee");
+        NSString *url = [attendeeDict valueForKey:@"url"];
+        NSString *fName = [attendeeDict valueForKey:@"firstName"];
+        NSString *lName = [attendeeDict valueForKey:@"lastName"];
+        id attendee = [className new];
+        [attendee setValue:fName forKey:@"firstName"];
+        [attendee setValue:lName forKey:@"lastName"];
+        [attendee setValue:url forKey:@"emailAddress"];
+        [calendarEventAttendees addObject:attendee];
+    }
+    return [calendarEventAttendees copy];
 }
 
 - (NSDictionary *)saveEvent:(EKEvent *)calendarEvent options:(NSDictionary *)options
